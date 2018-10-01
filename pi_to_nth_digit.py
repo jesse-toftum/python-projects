@@ -1,6 +1,6 @@
 from decimal import Decimal as Dec
 from decimal import getcontext as gc
-
+import time
 
 def chudnovsky(precision, max_iter=100, timeout=False):
     """
