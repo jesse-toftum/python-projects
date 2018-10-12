@@ -8,5 +8,38 @@ By starting with 1 and 2, the first 10 terms will be:
 
 By considering the terms in the Fibonacci sequence whose values do not exceed four million,
 find the sum of the even-valued terms.
-
 """
+import math
+
+
+def fib_num(number):
+    """
+    Calculates a specific fibonacci number.
+    http://www.wolframalpha.com/input/?i=fibonacci+number
+    :param number: The fibonacci number to calculate. fib_num(1) == F_1.
+    :return: The nth fibonacci number.
+    """
+    sqrt_5 = math.sqrt(5)
+    phi = (1 + sqrt_5) / 2
+    result = ((phi**number) - ((1 - phi)**number)) / sqrt_5
+    # Just in case there's rounding error from the calculation
+    return round(result)
+
+
+def project_euler_02():
+    """
+    Calculates the sum of all even Fibonacci numbers below 4 million.
+    :return: The sum of all even Fibonacci numbers below 4 million.
+    """
+    limit = 4000000
+    sum_value = 0
+    n = 1
+    while fib_num(n) < limit:
+        fib_val = fib_num(n)
+        if fib_val % 2 == 0:
+            sum_value += fib_val
+        n += 1
+    return sum_value
+
+
+print(project_euler_02())
