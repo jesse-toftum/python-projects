@@ -9,10 +9,12 @@ from decimal import getcontext as gc
 # noinspection SpellCheckingInspection
 def chudnovsky(precision, max_iter=100, timeout=False):
     """
+    
     Calculates pi using the Chudnovsky algorithm:
     https://en.wikipedia.org/wiki/Chudnovsky_algorithm
 
     Runs in O(n log(n)^3).
+    
     :param precision: The level of precision to be used
     :param max_iter: The maximum number of iterations to be used
     :param timeout: The maximum number of seconds to pass before refusing to continue summation.

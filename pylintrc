@@ -145,6 +145,8 @@ max-module-lines=1000
 # tab).
 indent-string='    '
 
+no-space-check=trailing-comma,dict-separator,empty-line
+
 
 [SIMILARITIES]
 

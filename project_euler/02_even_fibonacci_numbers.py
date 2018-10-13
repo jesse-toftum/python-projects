@@ -12,10 +12,12 @@ find the sum of the even-valued terms.
 import math
 
 
-def fib_num(number):
+def fib_num(number: int):
     """
+    
     Calculates a specific fibonacci number.
     http://www.wolframalpha.com/input/?i=fibonacci+number
+    
     :param number: The fibonacci number to calculate. fib_num(1) == F_1.
     :return: The nth fibonacci number.
     """
@@ -28,7 +30,9 @@ def fib_num(number):
 
 def project_euler_02():
     """
+    
     Calculates the sum of all even Fibonacci numbers below 4 million.
+    
     :return: The sum of all even Fibonacci numbers below 4 million.
     """
     limit = 4000000
