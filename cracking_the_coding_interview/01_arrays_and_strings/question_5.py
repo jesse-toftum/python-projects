@@ -8,10 +8,19 @@ strings, write a function to check if they are one edit (or zero edits) away.
 def one_away_replace(first: str, second: str) -> bool:
     """
     Checks whether a string can be reached by replacing a single character.
-    :param first: The first string
-    :param second: The second string
-    :return: True if the `first` can be
-        transformed into `second` with one replacement
+
+    Parameters
+    ----------
+    first : str
+        The first string
+    second : str
+        The second string
+
+    Returns
+    -------
+    bool
+        True if the `first` can be transformed into `second` with one
+        replacement
     """
     # This is used to check whether a change has already been made
     change_found = False
@@ -31,13 +40,22 @@ def one_away_replace(first: str, second: str) -> bool:
     # must be within one replacement of second
     return True
 
+
 def one_away_insert(first: str, second: str) -> bool:
     """
     Checks whether a string can be reached by inserting a single character.
-    :param first: The first string
-    :param second: The second string
-    :return: True if the `first` can be
-        transformed into `second` with one insertion
+
+    Parameters
+    ----------
+    first : str
+        The first string
+    second : str
+        The second string
+
+    Returns
+    -------
+    bool
+        True if the `first` can be transformed into `second` with one insertion
     """
     # This is used to check whether a change has already been made
     change_found = False
@@ -59,9 +77,18 @@ def one_away_insert(first: str, second: str) -> bool:
 def one_away(first: str, second: str) -> bool:
     """
     Checks whether a string is within one edit of another
-    :param first: The first string
-    :param second: The second string
-    :return: True if the `first` can be transformed into `second` with one edit
+
+    Parameters
+    ----------
+    first : str
+        The first string
+    second : str
+        The second string
+
+    Returns
+    -------
+    bool
+        True if the `first` can be transformed into `second` with one edit
     """
     if len(first) == len(second):
         return one_away_replace(first, second)

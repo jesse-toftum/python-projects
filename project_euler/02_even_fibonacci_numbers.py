@@ -12,14 +12,20 @@ find the sum of the even-valued terms.
 import math
 
 
-def fib_num(number: int):
+def fib_num(number: int) -> int:
     """
-    
     Calculates a specific fibonacci number.
     http://www.wolframalpha.com/input/?i=fibonacci+number
-    
-    :param number: The fibonacci number to calculate. fib_num(1) == F_1.
-    :return: The nth fibonacci number.
+
+    Parameters
+    ----------
+    number : int
+        The fibonacci number to calculate. fib_num(1) == F_1.
+
+    Returns
+    -------
+    int
+        The nth fibonacci number.
     """
     sqrt_5 = math.sqrt(5)
     phi = (1 + sqrt_5) / 2
@@ -28,12 +34,14 @@ def fib_num(number: int):
     return round(result)
 
 
-def project_euler_02():
+def project_euler_02() -> int:
     """
-    
     Calculates the sum of all even Fibonacci numbers below 4 million.
-    
-    :return: The sum of all even Fibonacci numbers below 4 million.
+
+    Returns
+    -------
+    int
+        The sum of all even Fibonacci numbers below 4 million.
     """
     limit = 4000000
     sum_value = 0

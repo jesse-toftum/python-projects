@@ -11,8 +11,16 @@ def palindrome_permutation(string: str) -> bool:
     Checks whether a string can possibly be made into a palindrome. This is done
     by checking whether there is only one character in the string that shows up
     an odd number of times.
-    :param string: The given string
-    :return: True if the string can be made into a palindrome, otherwise False
+
+    Parameters
+    ----------
+    string : str
+        The given string
+
+    Returns
+    -------
+    bool
+        True if the string can be made into a palindrome, otherwise False
     """
     lowercase = string.lower()
     # This could easily be a defaultdict from Collections

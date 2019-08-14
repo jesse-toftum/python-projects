@@ -8,23 +8,35 @@ Find the largest palindrome made from the product of two 3-digit numbers.
 """
 
 
-def is_palindrome(number: int):
+def is_palindrome(number: int) -> bool:
     """
-
     Determines whether a given number is a palindrome.
 
-    :param number: Some number to check
-    :return: True if number is a palindrome, and false otherwise.
+    Parameters
+    ----------
+    number : int
+        Some number to check
+
+    Returns
+    -------
+    bool
+        True if number is a palindrome, and false otherwise.
     """
     number_string = str(number)
 
     return number_string == number_string[::-1]
 
 
-def project_euler_04():
+def project_euler_04() -> int:
     """
-    Finds the highest palindromic number made from the product of two 3-digit numbers
-    :return: The largest palindromic number from two 3-digit numbers, which happens to be 906609.
+    Finds the highest palindromic number made from the product of two
+    3-digit numbers
+
+    Returns
+    -------
+    int
+        The largest palindromic number from two 3-digit numbers,
+        which happens to be 906609.
     """
     highest_palindrome = 0
     for i in range(999, 99, -1):

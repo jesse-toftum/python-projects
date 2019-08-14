@@ -10,9 +10,18 @@ operation in place.)
 def urlify(string: str, length: int) -> str:
     """
     Replaces the spaces in a given string with `%20`.
-    :param string: The string to replace spaces in
-    :param length: The "true" length of the string
-    :return: A string where spaces are replaced with `%20`.
+
+    Parameters
+    ----------
+    string : str
+        The string to replace spaces in
+    length : int
+        The "true" length of the string
+
+    Returns
+    -------
+    str
+        A string where spaces are replaced with `%20`.
     """
     # This is a list of strings to allow for efficient concatenation
     url = []
