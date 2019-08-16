@@ -9,12 +9,12 @@ from math import factorial
 
 def calculate_e(precision, max_iter=100, timeout=False):
     """
-    
+
     Calculates e using an algorithm found here:
     https://en.wikipedia.org/wiki/List_of_representations_of_e
 
     Accurate to within 2 * 10^-12 after 5 iterations.
-    
+
     :param precision: The level of precision to be used
     :param max_iter: The maximum number of iterations to be used
     :param timeout: The maximum number of seconds to pass before refusing to continue summation.

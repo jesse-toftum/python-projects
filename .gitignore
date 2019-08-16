@@ -1,6 +1,10 @@
 # For PyCharm
 .idea/
 
+# For VSCode
+.vscode/
+settings.json
+
 # Ignore any kind of backup files
 *.bak
 *.gho
