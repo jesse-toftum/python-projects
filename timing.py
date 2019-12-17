@@ -1,7 +1,7 @@
 import math
-import numpy as np
 import time
 
+import numpy as np
 from matplotlib import pyplot as plt
 from scipy import optimize
 from sklearn import metrics
@@ -12,10 +12,25 @@ SIZE = 1024
 MAX_TIME = 60 * 5
 PLOT = True
 LIMIT = 2 ** 22
-MULT = 2
+MULTIPLIER = 2
+
+FUNCTIONS = {
+    "log(n)": np.vectorize(lambda x, a, b: a * math.log2(x) + b),
+    "log(n)^2": np.vectorize(lambda x, a, b: a * math.log2(x) ** 2 + b),
+    "n": np.vectorize(lambda x, a, b: a * x + b),
+    "n*log(n)": np.vectorize(lambda x, a, b: a * x * math.log2(x) + b),
+    "n*log(n)^2": np.vectorize(lambda x, a, b: a * x * math.log2(x) ** 2 + b),
+    "n^2": np.vectorize(lambda x, a, b: a * x ** 2 + b),
+    "n^3": np.vectorize(lambda x, a, b: a * x ** 3 + b),
+    "2^n": np.vectorize(lambda x, a, b: a * 2 ** x + b),
+    # "n^a": np.vectorize(lambda x, a, b: x ** a + b),
+    # "a^n": np.vectorize(lambda x, a, b: a ** x + b),
+    "n!": np.vectorize(lambda x, a, b: a * math.factorial(x) + b),
+}
 
 
 def main():
+    """ Holds main block for testing timings """
     choice = int(input("Enter choice (0-10): "))
     if choice == 0:
         print("Time single binary search for last element in array")
@@ -53,7 +68,7 @@ def main():
         iteration = 0
         test_start = time.time()
         while size < LIMIT and time.time() - MAX_TIME < test_start:
-            size *= MULT
+            size *= MULTIPLIER
             size = round(size)
             current_time = time_binary_search_5(size - 1)
             print_info(size, current_time, previous_time, iteration)
@@ -75,7 +90,7 @@ def main():
         iteration = 0
         test_start = time.time()
         while size < LIMIT and time.time() - MAX_TIME < test_start:
-            size *= MULT
+            size *= MULTIPLIER
             size = round(size)
             current_time = time_binary_search_6(size - 1)
             print_info(size, current_time, previous_time, iteration)
@@ -97,7 +112,7 @@ def main():
         iteration = 0
         test_start = time.time()
         while size < LIMIT and time.time() - MAX_TIME < test_start:
-            size *= MULT
+            size *= MULTIPLIER
             size = round(size)
             current_time = time_binary_search_7(size - 1)
             print_info(size, current_time, previous_time, iteration)
@@ -118,7 +133,7 @@ def main():
         iteration = 0
         test_start = time.time()
         while size < LIMIT and time.time() - MAX_TIME < test_start:
-            size *= MULT
+            size *= MULTIPLIER
             size = round(size)
             current_time = time_linear_search_1(size - 1)
             print_info(size, current_time, previous_time, iteration)
@@ -135,6 +150,7 @@ def main():
 
 
 def linear_search(data, item):
+    """Returns an index of item within data, or -1 if it isn't there."""
     for idx, itm in enumerate(data):
         if itm == item:
             return idx
@@ -142,13 +158,18 @@ def linear_search(data, item):
 
 
 def binary_search(data, item):
+    """
+    Implements binary search. If item is found in data, return its
+    index. Otherwise, find the index i at which item should have appeared
+    and return -(i+1).
+    """
     low = 0
     high = len(data) - 1
     while low <= high:
         mid = (low + high) // 2
         if data[mid] == item:
             return mid
-        elif data[mid] < item:
+        if data[mid] < item:
             low = mid + 1
         else:
             high = mid - 1
@@ -156,50 +177,89 @@ def binary_search(data, item):
 
 
 def m_secs(time_amount):
+    """Converts the number of seconds to milliseconds"""
     return time_amount * 1000
 
 
 def time_binary_search_1(size):
-    data = [i for i in range(size)]
+    """
+    Returns the time required to find the last element of an array
+    of the given size using binary search. Operates by timing a
+    single lookup operation.
+    """
+    # Construct a sorted array
+    data = [range(size)]
 
+    # Time the operation
     start = time.time()
     binary_search(data, size-1)
     stop = time.time()
     final_time = stop - start
+
+    # Return the number of milliseconds that elapsed
     return m_secs(final_time)
 
 
 def time_binary_search_2(size):
-    data = [i for i in range(size)]
+    """
+    Returns the time required to find the last element of an array
+    of the given size using binary search. Operates by timing REPETITIONS
+    operations and averaging.
+    """
+    # Construct a sorted array
+    data = [range(size)]
     final_time = 0
+
+    # Time REPETITIONS operations
     for i in range(REPETITIONS):
         start = time.time()
         binary_search(data, size-1)
         stop = time.time()
         final_time += stop - start
+
+    # Return the average number of milliseconds that elapsed
     return m_secs(final_time) / REPETITIONS
 
 
 def time_binary_search_3(size):
-    data = [i for i in range(size)]
+    """
+    Returns the time required to find the last element of an array
+    of the given size using binary search. Operates by timing a loop
+    that does the operation REPETITIONS times, then calculating the loop
+    overhead, and averaging.
+    """
+    # Construct a sorted array
+    data = [range(size)]
     start = time.time()
-    for i in range(REPETITIONS):
+
+    # Make a single measurement of REPETITIONS operations
+    for _ in range(REPETITIONS):
         binary_search(data, size-1)
     stop = time.time()
     final_time = m_secs(stop - start) / REPETITIONS
 
+    # Return the average
     return final_time
 
 
 def time_binary_search_4(size, display_sanity=False):
-    data = [i for i in range(size)]
+    """
+    Returns the time required to find the last element of an array
+    of the given size using binary search. Operates by timing a loop
+    that does the operation REPETITIONS times, then calculating the loop overhead,
+    and averaging.
+    """
+    # Construct a sorted array
+    data = [range(size)]
 
+    # Make a single measurement of REPETITIONS operations
     start = time.time()
     for i in range(REPETITIONS):
         binary_search(data, size-1)
     stop = time.time()
     final_time = m_secs(stop - start) / REPETITIONS
 
+    # Repeat, but don't actually do the binary search
     overhead_start = time.time()
     for i in range(REPETITIONS):
         # binary_search(data, size-1)
@@ -207,16 +267,26 @@ def time_binary_search_4(size, display_sanity=False):
     overhead_stop = time.time()
     overhead_time = m_secs(overhead_stop - overhead_start) / REPETITIONS
 
+    # Display the raw data as a sanity check
     if display_sanity:
         print(f"    Total avg:    {final_time} msecs")
         print(f"    Overhead avg: {final_time} msecs")
 
+    # Return the difference
     return final_time - overhead_time
 
 
 def time_binary_search_5(size, display_sanity=False):
-    data = [i for i in range(size)]
+    """
+    Returns the time required to find the last element of an array
+    of the given size using binary search. Operates by timing a loop
+    that does the operation until one second elapses, then times the
+    overhead, then computes and returns an average.
+    """
+    # Construct a sorted array
+    data = [range(size)]
 
+    # Keep increasing the number of repetitions until one second elapses.
     repetitions = 1
     elapsed = 0
     while elapsed < DURATION:
@@ -228,7 +298,8 @@ def time_binary_search_5(size, display_sanity=False):
         elapsed = m_secs(stop - start)
     final_time = elapsed / repetitions
 
-    # repetitions = 1
+    # Keep increasing the number of repetitions until one second elapses.
+    repetitions = 1
     elapsed = 0
     while elapsed < DURATION:
         repetitions *= 2
@@ -240,16 +311,25 @@ def time_binary_search_5(size, display_sanity=False):
         elapsed = m_secs(overhead_stop - overhead_start)
     overhead_time = elapsed / repetitions
 
+    # Display the raw data as a sanity check
     if display_sanity:
         print(f"    Total avg:    {final_time} msecs")
         print(f"    Overhead avg: {final_time} msecs")
 
+    # Return the difference
     return final_time - overhead_time
 
 
 def time_binary_search_6(size, display_sanity=False):
-    data = [i for i in range(size)]
+    """
+    Returns the average time required to find an element in an array of
+    the given size using binary search, assuming that the element actually
+    appears in the array.
+    """
+    # Construct a sorted array
+    data = [range(size)]
 
+    # Keep increasing the number of repetitions until one second elapses.
     repetitions = 1
     elapsed = 0
     while elapsed < DURATION:
@@ -262,7 +342,8 @@ def time_binary_search_6(size, display_sanity=False):
         elapsed = m_secs(stop - start)
     final_time = elapsed / repetitions / size
 
-    # repetitions = 1
+    # Keep increasing the number of repetitions until one second elapses.
+    repetitions = 1
     elapsed = 0
     while elapsed < DURATION:
         repetitions *= 2
@@ -275,16 +356,25 @@ def time_binary_search_6(size, display_sanity=False):
         elapsed = m_secs(overhead_stop - overhead_start)
     overhead_time = elapsed / repetitions / size
 
+    # Display the raw data as a sanity check
     if display_sanity:
         print(f"    Total avg:    {final_time} msecs")
         print(f"    Overhead avg: {final_time} msecs")
 
+    # Return the difference
     return final_time - overhead_time
 
 
 def time_binary_search_7(size, display_sanity=False):
-    data = [i for i in range(size)]
+    """
+    Returns the average time required to find an element in an array of
+    the given size using binary search, assuming that the element actually
+    appears in the array. Uses a different timer than search 6.
+    """
+    # Construct a sorted array
+    data = [range(size)]
 
+    # Keep increasing the number of repetitions until one second elapses.
     repetitions = 1
     elapsed = 0
     while elapsed < DURATION:
@@ -297,7 +387,8 @@ def time_binary_search_7(size, display_sanity=False):
         elapsed = m_secs(stop - start)
     final_time = elapsed / repetitions / size
 
-    # repetitions = 1
+    # Keep increasing the number of repetitions until one second elapses.
+    repetitions = 1
     elapsed = 0
     while elapsed < DURATION:
         repetitions *= 2
@@ -310,16 +401,25 @@ def time_binary_search_7(size, display_sanity=False):
         elapsed = m_secs(overhead_stop - overhead_start)
     overhead_time = elapsed / repetitions / size
 
+    # Display the raw data as a sanity check
     if display_sanity:
         print(f"    Total avg:    {final_time} msecs")
         print(f"    Overhead avg: {final_time} msecs")
 
+    # Return the difference
     return final_time - overhead_time
 
 
 def time_linear_search_1(size, display_sanity=False):
-    data = [i for i in range(size)]
+    """
+    Returns the average time required to find an element in an array of
+    the given size using linear search, assuming that the element actually
+    appears in the array. Uses the same setup as time_binary_search_7.
+    """
+    # Construct a sorted array
+    data = [range(size)]
 
+    # Keep increasing the number of repetitions until one second elapses.
     repetitions = 1
     elapsed = 0
     while elapsed < DURATION:
@@ -332,7 +432,8 @@ def time_linear_search_1(size, display_sanity=False):
         elapsed = m_secs(stop - start)
     final_time = elapsed / repetitions / size
 
-    # repetitions = 1
+    # Keep increasing the number of repetitions until one second elapses.
+    repetitions = 1
     elapsed = 0
     while elapsed < DURATION:
         repetitions *= 2
@@ -346,13 +447,19 @@ def time_linear_search_1(size, display_sanity=False):
 
     overhead_time = elapsed / repetitions / size
 
+    # Display the raw data as a sanity check
     if display_sanity:
         print(f"    Total avg:    {final_time} msecs")
         print(f"    Overhead avg: {final_time} msecs")
 
+    # Return the difference
     return final_time - overhead_time
 
+
 def print_info(size, current_time, previous_time, iteration):
+    """
+    Prints information of the timings, in line with the other timings.
+    """
     print(f"{size:<16} {current_time:<16.8f} ", end="")
     if iteration > 0:
         print(
@@ -360,39 +467,44 @@ def print_info(size, current_time, previous_time, iteration):
     else:
         print()
 
+
 def print_header():
+    """
+    Prints the header for the timings in an aligned manner.
+    """
     print(f"{'Size':<16} {'Time (msec)':<16} {'Delta (msec)':<16} {'Ratio':<16}")
 
+
 def plot_and_fit(x_vals, y_vals, label):
+    """
+    Simultaneously plots recorded values and does its best to fit and plot an
+    asymptotically accurate curve.
+    """
     function_name, params, r2 = find_best_fit(x_vals, y_vals)
     print(f'Best fit found to be O({function_name})')
     plt.plot(x_vals, y_vals, label=label, linestyle='--')
     x_vals = np.linspace(x_vals[0], x_vals[-1], 1_000)
     y_vals = FUNCTIONS[function_name](x_vals, params[0], params[1])
-    plt.plot(x_vals, y_vals, label=function_label(function_name, params[0], params[1], r2))
+    plt.plot(x_vals, y_vals, label=function_label(
+        function_name, params[0], params[1], r2))
+
 
 def r2(function, params, x_data, y_data):
+    """
+    Returns the coefficient of determination for a fit given the x values,
+    the y values, the function, and the parameters of the function.
+    """
     return metrics.r2_score(y_data, function(x_data, params[0], params[1]))
 
 
 def find_best_fit(x_data, y_data):
-    functions = {
-        "log(n)": np.vectorize(lambda x, a, b: a * math.log2(x) + b),
-        "log(n)^2": np.vectorize(lambda x, a, b: a * math.log2(x) ** 2 + b),
-        "n": np.vectorize(lambda x, a, b: a * x + b),
-        "n*log(n)": np.vectorize(lambda x, a, b: a * x * math.log2(x) + b),
-        "n*log(n)^2": np.vectorize(lambda x, a, b: a * x * math.log2(x) ** 2 + b),
-        "n^2": np.vectorize(lambda x, a, b: a * x ** 2 + b),
-        "n^3": np.vectorize(lambda x, a, b: a * x ** 3 + b),
-        "2^n": np.vectorize(lambda x, a, b: a * 2 ** x + b),
-        # "n^a": np.vectorize(lambda x, a, b: x ** a + b),
-        # "a^n": np.vectorize(lambda x, a, b: a ** x + b),
-        "n!": np.vectorize(lambda x, a, b: a * math.factorial(x) + b),
-    }
+    """
+    Calculates the line of best fit given x and y data.
+    """
     best_r = float('-inf')
     best_function = ""
     best_params = ()
-    for name, function in functions.items():
+    for name, function in FUNCTIONS.items():
         try:
             params, params_covariance = optimize.curve_fit(
                 function, x_data, y_data, p0=[1, 1])
@@ -411,6 +523,10 @@ def find_best_fit(x_data, y_data):
 
 
 def function_label(name, a, b, r2):
+    """
+    Returns a given a function, its parameters, its coefficient of determination
+    in a form suitable for being used as a label by matplotlib.
+    """
     functions = {
         "log(n)": f'${b:.6f}+{a:.6f}$log$(n)$ with $r^2={r2:.4f}$',
         "log(n)^2": f'${b:.6f}+{a:.6f}$log$(n)^2$ with $r^2={r2:.4f}$',
@@ -425,7 +541,6 @@ def function_label(name, a, b, r2):
         "n!": f'${b:.6f}+{a:.6f}n!$ with $r^2={r2:.4f}$',
     }
     return functions[name]
-
 
 
 # $\mathcal{O}$
