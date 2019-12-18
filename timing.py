@@ -1,3 +1,6 @@
+"""
+Timing experiments
+"""
 import math
 import time
 
@@ -7,11 +10,11 @@ from scipy import optimize
 from sklearn import metrics
 
 REPETITIONS = 1000
-DURATION = 1000
+DURATION = 5000
 SIZE = 1024
 MAX_TIME = 60 * 5
 PLOT = True
-LIMIT = 2 ** 22
+LIMIT = 2 ** 30
 MULTIPLIER = 2
 
 FUNCTIONS = {
@@ -42,24 +45,24 @@ def main():
         print(f"Time loop itself doing {REPETITIONS} searches, average them")
         print(f"{time_binary_search_3(SIZE)} msecs\n")
     elif choice == 3:
-        print(
-            f"Time loop itself doing {REPETITIONS} searches, average them, subtract overhead")
+        print(f"Time loop itself doing {REPETITIONS} searches, \
+            average them, subtract overhead")
         print(f"{time_binary_search_4(SIZE, True)} msecs\n")
     elif choice == 4:
-        print(
-            f"Time loop itself for {DURATION} msecs, average them, subtract overhead")
+        print(f"Time loop itself for {DURATION} msecs, average them, \
+                subtract overhead")
         print(f"{time_binary_search_5(SIZE, True)} msecs\n")
     elif choice == 5:
-        print(
-            f"Time loop itself for {DURATION} msecs looking up all items, average, subtract overhead")
+        print(f"Time loop itself for {DURATION} msecs looking up all items, \
+                average, subtract overhead")
         print(f"{time_binary_search_6(SIZE, True)} msecs\n")
     elif choice == 6:
-        print(
-            f"Time loop itself for {DURATION} msecs looking up all items, average, subtract overhead using a process timer")
+        print(f"Time loop itself for {DURATION} msecs looking up all items, \
+                average, subtract overhead using a process timer")
         print(f"{time_binary_search_7(SIZE, True)} msecs\n")
     elif choice == 7:
-        print(
-            f"Time loop itself for {DURATION} msecs, average them, subtract overhead for various sizes")
+        print(f"Time loop itself for {DURATION} msecs, average them, \
+                subtract overhead for various sizes")
         size = 16
         print_header()
         previous_time = 0
@@ -80,8 +83,8 @@ def main():
             plot_and_fit(x_vals, y_vals, label='Binary Search 5')
         print()
     elif choice == 8:
-        print(
-            f"Time loop itself for {DURATION} msecs looking up all items, average, subtract overhead for various sizes")
+        print(f"Time loop itself for {DURATION} msecs looking up all items, \
+            average, subtract overhead for various sizes")
         size = 16
         print_header()
         previous_time = 0
@@ -102,8 +105,8 @@ def main():
             plot_and_fit(x_vals, y_vals, label='Binary Search 6')
         print()
     elif choice == 9:
-        print(
-            f"Time loop itself for {DURATION} msecs looking up all items, average, subtract overhead using a process timer for various sizes")
+        print(f"Time loop itself for {DURATION} msecs looking up all items, \
+            average, subtract overhead using a process timer for various sizes")
         size = 16
         print_header()
         previous_time = 0
@@ -124,7 +127,8 @@ def main():
             plot_and_fit(x_vals, y_vals, label='Binary Search 7')
         print()
     elif choice == 10:
-        print("Average time for linear search for last element for various sizes")
+        print("Average time for linear search for \
+            last element for various sizes")
         size = 16
         print_header()
         previous_time = 0
@@ -188,7 +192,7 @@ def time_binary_search_1(size):
     single lookup operation.
     """
     # Construct a sorted array
-    data = [range(size)]
+    data = list(range(size))
 
     # Time the operation
     start = time.time()
@@ -207,11 +211,11 @@ def time_binary_search_2(size):
     operations and averaging.
     """
     # Construct a sorted array
-    data = [range(size)]
+    data = list(range(size))
     final_time = 0
 
     # Time REPETITIONS operations
-    for i in range(REPETITIONS):
+    for _ in range(REPETITIONS):
         start = time.time()
         binary_search(data, size-1)
         stop = time.time()
@@ -229,7 +233,7 @@ def time_binary_search_3(size):
     overhead, and averaging.
     """
     # Construct a sorted array
-    data = [range(size)]
+    data = list(range(size))
     start = time.time()
 
     # Make a single measurement of REPETITIONS operations
@@ -246,22 +250,22 @@ def time_binary_search_4(size, display_sanity=False):
     """
     Returns the time required to find the last element of an array
     of the given size using binary search. Operates by timing a loop
-    that does the operation REPETITIONS times, then calculating the loop overhead,
-    and averaging.
+    that does the operation REPETITIONS times, then calculating the
+    loop overhead, and averaging.
     """
     # Construct a sorted array
-    data = [range(size)]
+    data = list(range(size))
 
     # Make a single measurement of REPETITIONS operations
     start = time.time()
-    for i in range(REPETITIONS):
+    for _ in range(REPETITIONS):
         binary_search(data, size-1)
     stop = time.time()
     final_time = m_secs(stop - start) / REPETITIONS
 
     # Repeat, but don't actually do the binary search
     overhead_start = time.time()
-    for i in range(REPETITIONS):
+    for _ in range(REPETITIONS):
         # binary_search(data, size-1)
         pass
     overhead_stop = time.time()
@@ -284,7 +288,7 @@ def time_binary_search_5(size, display_sanity=False):
     overhead, then computes and returns an average.
     """
     # Construct a sorted array
-    data = [range(size)]
+    data = list(range(size))
 
     # Keep increasing the number of repetitions until one second elapses.
     repetitions = 1
@@ -292,7 +296,7 @@ def time_binary_search_5(size, display_sanity=False):
     while elapsed < DURATION:
         repetitions *= 2
         start = time.time()
-        for i in range(repetitions):
+        for _ in range(repetitions):
             binary_search(data, size-1)
         stop = time.time()
         elapsed = m_secs(stop - start)
@@ -304,7 +308,7 @@ def time_binary_search_5(size, display_sanity=False):
     while elapsed < DURATION:
         repetitions *= 2
         overhead_start = time.time()
-        for i in range(repetitions):
+        for _ in range(repetitions):
             # binary_search(data, size-1)
             pass
         overhead_stop = time.time()
@@ -327,7 +331,7 @@ def time_binary_search_6(size, display_sanity=False):
     appears in the array.
     """
     # Construct a sorted array
-    data = [range(size)]
+    data = list(range(size))
 
     # Keep increasing the number of repetitions until one second elapses.
     repetitions = 1
@@ -335,7 +339,7 @@ def time_binary_search_6(size, display_sanity=False):
     while elapsed < DURATION:
         repetitions *= 2
         start = time.time()
-        for i in range(repetitions):
+        for _ in range(repetitions):
             for item in data:
                 binary_search(data, item)
         stop = time.time()
@@ -348,7 +352,7 @@ def time_binary_search_6(size, display_sanity=False):
     while elapsed < DURATION:
         repetitions *= 2
         overhead_start = time.time()
-        for i in range(repetitions):
+        for _ in range(repetitions):
             for item in data:
                 # binary_search(data, item)
                 pass
@@ -372,7 +376,7 @@ def time_binary_search_7(size, display_sanity=False):
     appears in the array. Uses a different timer than search 6.
     """
     # Construct a sorted array
-    data = [range(size)]
+    data = list(range(size))
 
     # Keep increasing the number of repetitions until one second elapses.
     repetitions = 1
@@ -380,7 +384,7 @@ def time_binary_search_7(size, display_sanity=False):
     while elapsed < DURATION:
         repetitions *= 2
         start = time.process_time()
-        for i in range(repetitions):
+        for _ in range(repetitions):
             for item in data:
                 binary_search(data, item)
         stop = time.process_time()
@@ -393,7 +397,7 @@ def time_binary_search_7(size, display_sanity=False):
     while elapsed < DURATION:
         repetitions *= 2
         overhead_start = time.process_time()
-        for i in range(repetitions):
+        for _ in range(repetitions):
             for item in data:
                 # binary_search(data, item)
                 pass
@@ -417,7 +421,7 @@ def time_linear_search_1(size, display_sanity=False):
     appears in the array. Uses the same setup as time_binary_search_7.
     """
     # Construct a sorted array
-    data = [range(size)]
+    data = list(range(size))
 
     # Keep increasing the number of repetitions until one second elapses.
     repetitions = 1
@@ -425,7 +429,7 @@ def time_linear_search_1(size, display_sanity=False):
     while elapsed < DURATION:
         repetitions *= 2
         start = time.process_time()
-        for i in range(repetitions):
+        for _ in range(repetitions):
             for item in data:
                 linear_search(data, item)
         stop = time.process_time()
@@ -438,7 +442,7 @@ def time_linear_search_1(size, display_sanity=False):
     while elapsed < DURATION:
         repetitions *= 2
         overhead_start = time.process_time()
-        for i in range(repetitions):
+        for _ in range(repetitions):
             for item in data:
                 # linear_search(data, item)
                 pass
@@ -489,7 +493,7 @@ def plot_and_fit(x_vals, y_vals, label):
         function_name, params[0], params[1], r2))
 
 
-def r2(function, params, x_data, y_data):
+def coefficient_of_determination(function, params, x_data, y_data):
     """
     Returns the coefficient of determination for a fit given the x values,
     the y values, the function, and the parameters of the function.
@@ -506,13 +510,14 @@ def find_best_fit(x_data, y_data):
     best_params = ()
     for name, function in FUNCTIONS.items():
         try:
-            params, params_covariance = optimize.curve_fit(
+            params, _ = optimize.curve_fit(
                 function, x_data, y_data, p0=[1, 1])
-            current_r2 = r2(function, params, x_data, y_data)
+            current_r2 = coefficient_of_determination(
+                function, params, x_data, y_data)
             # print(f'{name} gives {current_r2}')
             if current_r2 > best_r:
-                # print(
-                #     f'New best! {name} replaces {best_function}, with {current_r2:.6f} > {best_r:.6f}')
+                # print(f'New best! {name} replaces {best_function}, \
+                #     with {current_r2:.6f} > {best_r:.6f}')
                 best_function = name
                 best_params = params
                 best_r = current_r2
@@ -522,26 +527,25 @@ def find_best_fit(x_data, y_data):
     return best_function, best_params, best_r
 
 
-def function_label(name, a, b, r2):
+def function_label(name, beta, alpha, r_squared):
     """
-    Returns a given a function, its parameters, its coefficient of determination
-    in a form suitable for being used as a label by matplotlib.
+    Returns a given function, its parameters, and its coefficient of
+    determination in a form suitable for being used as a label by matplotlib.
     """
     functions = {
-        "log(n)": f'${b:.6f}+{a:.6f}$log$(n)$ with $r^2={r2:.4f}$',
-        "log(n)^2": f'${b:.6f}+{a:.6f}$log$(n)^2$ with $r^2={r2:.4f}$',
-        "n": f'${b:.6f}+{a:.6f}n$ with $r^2={r2:.4f}$',
-        "n*log(n)": f'${b:.6f}+{a:.6f}n$log$(n)$ with $r^2={r2:.4f}$',
-        "n*log(n)^2": f'${b:.6f}+{a:.6f}n$log$(n)^2$ with $r^2={r2:.4f}$',
-        "n^2": f'${b:.6f}+{a:.6f}n^2$ with $r^2={r2:.4f}$',
-        "n^3": f'${b:.6f}+{a:.6f}n^3$ with $r^2={r2:.4f}$',
-        "2^n": f'${b:.6f}+2^{a:.6f}x$ with $r^2={r2:.4f}$',
-        # "n^a": f'${b:.6f}+n^{a:.6f}$ with $r^2={r2:.4f}$',
-        # "a^n": f'${b:.6f}+{a:.6f}^n$ with $r^2={r2:.4f}$',
-        "n!": f'${b:.6f}+{a:.6f}n!$ with $r^2={r2:.4f}$',
+        "log(n)": f'${alpha:.6f}+{beta:.6f}$log$(n)$ with $r^2={r_squared:.4f}$',
+        "log(n)^2": f'${alpha:.6f}+{beta:.6f}$log$(n)^2$ with $r^2={r_squared:.4f}$',
+        "n": f'${alpha:.6f}+{beta:.6f}n$ with $r^2={r_squared:.4f}$',
+        "n*log(n)": f'${alpha:.6f}+{beta:.6f}n$log$(n)$ with $r^2={r_squared:.4f}$',
+        "n*log(n)^2": f'${alpha:.6f}+{beta:.6f}n$log$(n)^2$ with $r^2={r_squared:.4f}$',
+        "n^2": f'${alpha:.6f}+{beta:.6f}n^2$ with $r^2={r_squared:.4f}$',
+        "n^3": f'${alpha:.6f}+{beta:.6f}n^3$ with $r^2={r_squared:.4f}$',
+        "2^n": f'${alpha:.6f}+2^{beta:.6f}x$ with $r^2={r_squared:.4f}$',
+        # "n^a": f'${alpha:.6f}+n^{beta:.6f}$ with $r^2={r2:.4f}$',
+        # "a^n": f'${alpha:.6f}+{beta:.6f}^n$ with $r^2={r2:.4f}$',
+        "n!": f'${alpha:.6f}+{beta:.6f}n!$ with $r^2={r_squared:.4f}$',
     }
     return functions[name]
 
 
-# $\mathcal{O}$
 main()
