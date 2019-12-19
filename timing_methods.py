@@ -134,6 +134,7 @@ class SimpleTiming:
             except StopIteration:
                 # Iterator exhausted: stop the loop
                 break
+
         # Re-enable garbage collection now that timing is done
         gc.enable()
         if self.plot:
@@ -178,7 +179,7 @@ class SimpleTiming:
         return timing_for_n
 
     @classmethod
-    def print_header(self):
+    def print_header(cls):
         """
         Prints the header for the timings in an aligned manner.
         """
@@ -248,10 +249,10 @@ class SimpleTiming:
 
 
 def fib(n):
-    for i in range(n):
-        for j in range(n):
+    for _ in range(n):
+        for _ in range(n):
             pass
     return n
 
 
-SimpleTiming(duration=2, max_time=240).time_function(fib)
+SimpleTiming(duration=1, max_time=60).time_function(fib)
