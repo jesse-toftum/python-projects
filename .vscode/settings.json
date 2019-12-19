@@ -4,5 +4,6 @@
     "cSpell.ignoreWords": [
         "msecs",
         "prec"
-    ]
+    ],
+    "python.linting.enabled": true
 }
