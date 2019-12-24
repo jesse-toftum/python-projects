@@ -1,8 +1,9 @@
 from __future__ import division
 from PIL import Image, ImageDraw
 from cmath import phase
+import sys
 
-dim = (256, 256)
+dim = (128, 128)
 bits = 8
 
 
@@ -65,7 +66,7 @@ for x in range(dim[0]):
             z -= (z**5-1)/(5*z**4)
             c += 1
         if z == 0:
-            c = float('inf')
+            c = sys.maxsize
         p = int(phase(z))
 
         a[p] += (c, abs(d-z), x, y),
@@ -108,7 +109,14 @@ for i in range(5):
 r = [0, 0, 0, 0, 0]
 for p in range(5):
     for c, d, x, y in a[p]:
+        print(f'c, d, x, y, p: {c}, {d}, {x}, {y}, {p}')
+        print(f'r: {r}')
+        # print(f't: {t}')
+        print(f'r[p]: {r[p]}')
+        print(f't[p]: {t[p]}')
+        print(f't[p][r[p]]: {t[p][r[p]]}')
         draw.point((x, y), t[p][r[p]])
         r[p] += 1
+        print()
 
 img.save("out.png")
