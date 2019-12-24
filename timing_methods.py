@@ -5,6 +5,7 @@ import gc
 import math
 import random
 import time
+from typing import Generator
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -13,6 +14,8 @@ from sklearn import metrics
 
 
 class SimpleTiming:
+    """A class for timing functions"""
+
     def __init__(self,
                  plot: bool = True,
                  print_out: bool = True,
@@ -58,7 +61,7 @@ class SimpleTiming:
             `n`, where it would take data it would use (like sorting), or where
             it would take an item (like searching). By default None
         skip_fits : list, optional
-            If `None`, defaults to ,`['n!', 'a^n', 'n^a']`. The `time_function`
+            If `None`, defaults to `['n!', 'a^n', 'n^a']`. The `time_function`
             method does not attempt to fit these functions. By default None
         """
         # User options
@@ -72,9 +75,9 @@ class SimpleTiming:
         self.skip_fits = skip_fits
 
         # Default Values
-        self.x_vals = [int]
-        self.y_vals = [int]
-        self.shared_dict = dict()
+        self.x_vals = []  # type: ignore
+        self.y_vals = []  # type: ignore
+        self.shared_dict = dict()  # type: ignore
         self.alpha = None
         self.beta = None
         self.r_2 = None
@@ -89,9 +92,6 @@ class SimpleTiming:
             self.skip_fits = ['n!', 'a^n', 'n^a']
         if self.selector is None:
             self.selector = random.choice
-        self.function_takes_item = self.arg_dict['item'] is not False
-        self.function_takes_data = self.arg_dict['data'] is not False
-        self.function_takes_n = self.arg_dict['n'] is not False
 
         if n_iterator is not None:
             try:
@@ -137,7 +137,24 @@ class SimpleTiming:
             if i in self.skip_fits:
                 del self.functions[i]
 
-    def function_label(self, function_name):
+    def function_label(self, function_name: str) -> str:
+        """
+        Returns a string (LaTeX) representation of the best fit using stored
+        parameters. All functions use only two parameters, typically a
+        multiplier and a vertical offset.
+
+        Parameters
+        ----------
+        function_name : str
+            The name of the function to get a label for
+
+        Returns
+        -------
+        str
+            A string (LaTeX) representation of the best fit using stored
+            parameters.
+        """
+
         function_labels = {
             "log(n)": (f'${self.beta:.6f}+{self.alpha:.8f}\\cdot $log$(n)$'
                        f' with $r^2={self.r_2:.4f}$'),
@@ -149,7 +166,7 @@ class SimpleTiming:
                          f'\\cdot n \\cdot $log$(n)$'
                          f' with $r^2={self.r_2:.4f}$'),
             "n*log(n)^2": (f'${self.beta:.6f}+{self.alpha:.8f}'
-                           '\\cdot n \\cdot $log$(n)^2$'
+                           f'\\cdot n \\cdot $log$(n)^2$'
                            f' with $r^2={self.r_2:.4f}$'),
             "n^2": (f'${self.beta:.6f}+{self.alpha:.8f}\\cdot n^2$'
                     f' with $r^2={self.r_2:.4f}$'),
@@ -166,22 +183,35 @@ class SimpleTiming:
             "n!": (f'${self.beta:.6f}+{self.alpha:.8f}\\cdot n!$'
                    f' with $r^2={self.r_2:.4f}$'),
         }
-        # Remove functions that should be skipped
-        for i in self.skip_fits:
-            if i in self.skip_fits:
-                del function_labels[i]
 
         return function_labels[function_name]
 
-    def built_in_iterator(self):
+    @classmethod
+    def built_in_iterator(cls) -> Generator:
+        """
+        Generator for powers of 2, starting with 2^4=16
+
+        Yields
+        -------
+        generator
+            The next power of 2 after the last one
+        """
         n = 16
         while True:
             yield n
-            n <<= 1
+            n *= 2
 
     def time_function(self,
+                      # pylint: disable=undefined-variable
                       function_to_time,
-                      *args, **kwargs):
+                      *args, **kwargs) -> None:
+        """Times the specified function"""
+
+        print(type(function_to_time))
+
+        function_takes_data = self.arg_dict['data'] is not False
+        function_takes_n = self.arg_dict['n'] is not False
+
         iteration = 0
         previous_time = 0
         test_start = time.time()
@@ -194,7 +224,7 @@ class SimpleTiming:
         while time.time() - self.max_time < test_start:
             try:
                 n = next(self.n_iterator)
-                if self.function_takes_n:
+                if function_takes_n:
                     self.shared_dict[self.arg_dict['n']] = n
 
                 if self.data_or_generator is None:
@@ -206,7 +236,7 @@ class SimpleTiming:
                         self.data = self.data_or_generator(n)
                     else:
                         self.data = self.data_or_generator
-                    if self.function_takes_data:
+                    if function_takes_data:
                         self.shared_dict[self.arg_dict['data']] = self.data
 
                     current_time = self.time_n(function_to_time,
@@ -228,8 +258,9 @@ class SimpleTiming:
         gc.enable()
         if self.plot:
             iteration = 0
+            # mypy: ignore
             while max(self.y_vals) < 0.005:
-                self.y_vals = [i * 1000 for i in self.y_vals]
+                self.y_vals = [i * 1000.0 for i in self.y_vals]
                 iteration += 1
             self.plot_and_fit(
                 label=f'Samples from {function_to_time.__name__}')
@@ -242,6 +273,7 @@ class SimpleTiming:
     def time_n(self, function_to_time, *args, **kwargs):
         # Repeat the timing of the function, but only until the number of
         # repetitions surpasses duration
+        function_takes_item = self.arg_dict['item'] is not False
         repetitions = 1
         elapsed = 0
         while elapsed < self.duration:
@@ -249,7 +281,7 @@ class SimpleTiming:
             start = time.process_time()
             for _ in range(repetitions):
                 try:
-                    if self.function_takes_item:
+                    if function_takes_item:
                         item = self.selector(self.data)
                         self.shared_dict[self.arg_dict['item']] = item
                     function_to_time(*args, **self.shared_dict, **kwargs)
@@ -269,7 +301,7 @@ class SimpleTiming:
             start = time.process_time()
             for _ in range(repetitions):
                 try:
-                    if self.function_takes_item:
+                    if function_takes_item:
                         item = self.selector(self.data)
                         self.shared_dict[self.arg_dict['item']] = item
                     # function_to_time(*args, **self.shared_dict, **kwargs)
@@ -295,11 +327,11 @@ class SimpleTiming:
               f" {'Delta (sec)':>16} {'Ratio':>16}")
 
     @classmethod
-    def print_info(cls, n, current_time, previous_time, iteration):
+    def print_info(cls, current_n, current_time, previous_time, iteration):
         """
         Prints information of the timings, in line with the other timings.
         """
-        print(f"{n:<16} {current_time:>16.8f} ", end="")
+        print(f"{current_n:<16} {current_time:>16.8f} ", end="")
         if iteration > 0:
             print(
                 f"{current_time - previous_time:>16.8f}"
@@ -324,13 +356,13 @@ class SimpleTiming:
                  y_vals,
                  label=self.function_label(function_name))
 
-    def get_r_2(self, function, params):
+    def get_r_2(self, regressor, params):
         """
         Returns the coefficient of determination for a fit given the x values,
         the y values, the function, and the parameters of the function.
         """
         return metrics.r2_score(self.y_vals,
-                                function(self.x_vals, params[0], params[1]))
+                                regressor(self.x_vals, params[0], params[1]))
 
     def find_best_fit(self):
         """
@@ -360,8 +392,8 @@ class SimpleTiming:
 
 
 def linear_contains(data, item):
-    for i in range(len(data)):
-        if data[i] == item:
+    for i in data:
+        if i == item:
             return True
     return False
 
@@ -381,6 +413,7 @@ def binary_contains(data, item):
 
 
 SimpleTiming(
+    # pylint: disable=unnecessary-lambda
     data_or_generator=lambda x: range(x),
     arg_dict={
         "n": False,
