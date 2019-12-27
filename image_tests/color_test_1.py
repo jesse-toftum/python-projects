@@ -1,122 +1,95 @@
-from __future__ import division
+import colorsys
+import random
+
+import numpy as np
 from PIL import Image, ImageDraw
 from cmath import phase
+from tqdm import tqdm
 import sys
 
-dim = (128, 128)
-bits = 8
+DIM_X = DIM_Y = 64
+
+SEEDS = 1
 
 
-def RGBtoHSV(R, G, B):
-    R /= 255
-    G /= 255
-    B /= 255
-
-    cmin = min(R, G, B)
-    cmax = max(R, G, B)
-    dmax = cmax - cmin
-
-    V = cmax
-
-    if dmax == 0:
-        H = 0
-        S = 0
-
-    else:
-        S = dmax/cmax
-
-        dR = ((cmax - R)/6 + dmax/2)/dmax
-        dG = ((cmax - G)/6 + dmax/2)/dmax
-        dB = ((cmax - B)/6 + dmax/2)/dmax
-
-        if R == cmax:
-            H = (dB - dG) % 1
-        elif G == cmax:
-            H = (1/3 + dR - dB) % 1
-        elif B == cmax:
-            H = (2/3 + dG - dR) % 1
-
-    return (H, S, V)
+def border_has_pixel(x, y, image_array, radius=1.5, p=2):
+    found_pixels = []
+    for i in range(max(0, int(x-radius)), max(DIM_X - 1, int(x+radius))):
+        for j in range(max(0, int(y-radius)), max(DIM_Y - 1, int(y+radius))):
+            x_dist = abs(i-x)
+            y_dist = abs(j-y)
+            reg_dist = (x_dist ** p + y_dist ** p) ** (1/p)
+            if reg_dist <= radius and image_array[i][j]:
+                found_pixels.append((i, j))
+    if found_pixels:
+        return random.choice(found_pixels)
+    return False
 
 
-cmax = (1 << bits)-1
-cfac = 255/cmax
+def populate_colors(dim_x, dim_y, max_pixel=255, unique_colors=256**2):
+    """Returns evenly spaced colors"""
+    all_colors = []
+    max_value = max_pixel ** 3
+    dim_1_colors = np.linspace(0, max_value, num=unique_colors)
+    for i in dim_1_colors:
+        red = int(i % max_pixel)
+        green = int((i // max_pixel) % max_pixel)
+        blue = int(i // (max_pixel ** 2))
+        all_colors.append((red, green, blue))
+    return all_colors
 
-img = Image.new('RGB', dim)
-draw = ImageDraw.Draw(img)
 
-xstart = -2
-ystart = -2
+def main():
+    color_list = populate_colors(DIM_X, DIM_Y, unique_colors=DIM_X*DIM_Y)
+    print(len(color_list))
+    print(DIM_X * DIM_Y)
+    dim = (DIM_X, DIM_Y)
 
-xd = 4 / dim[0]
-yd = 4 / dim[1]
+    image_array = []
+    remaining_pixels = []
+    for x in range(DIM_X):
+        image_array.append([])
+        for y in range(DIM_Y):
+            image_array[x].append(False)
+            remaining_pixels.append((x, y))
 
-tol = 1e-12
 
-a = [[], [], [], [], []]
+    random.shuffle(color_list)
+    random.shuffle(remaining_pixels)
 
-for x in range(dim[0]):
-    print(x, end="\r"),
-    for y in range(dim[1]):
-        z = d = complex(xstart + x*xd, ystart + y*yd)
-        c = 0
-        l = 1
-        while abs(l-z) > tol and abs(z) > tol:
-            l = z
-            z -= (z**5-1)/(5*z**4)
-            c += 1
-        if z == 0:
-            c = sys.maxsize
-        p = int(phase(z))
+    for _ in range(SEEDS):
+        color = color_list.pop()
+        rand_x = random.randint(0, DIM_X-1)
+        rand_y = random.randint(0, DIM_Y-1)
+        image_array[rand_x][rand_y] = color
 
-        a[p] += (c, abs(d-z), x, y),
+    while remaining_pixels:
+        random.shuffle(remaining_pixels)
+        print(len(remaining_pixels))
 
-for i in range(5):
-    a[i].sort(reverse=False)
+        to_remove = False
 
-pnum = [len(a[i]) for i in range(5)]
-ptot = dim[0]*dim[1]
+        for idx, (x, y) in enumerate(remaining_pixels):
+            result = border_has_pixel(x, y, image_array=image_array)
+            if result:
+                image_array[x][y] = color_list.pop()
+                to_remove = idx
+                break
 
-bounds = []
-lbound = 0
-for i in range(4):
-    nbound = lbound + pnum[i]/ptot
-    bounds += nbound,
-    lbound = nbound
+        if to_remove:
+            del remaining_pixels[to_remove]
 
-t = [[], [], [], [], []]
-for i in range(ptot-1, -1, -1):
-    r = (i >> bits*2)*cfac
-    g = (cmax & i >> bits)*cfac
-    b = (cmax & i)*cfac
-    (h, s, v) = RGBtoHSV(r, g, b)
-    h = (h+0.1) % 1
-    if h < bounds[0] and len(t[0]) < pnum[0]:
-        p = 0
-    elif h < bounds[1] and len(t[1]) < pnum[1]:
-        p = 1
-    elif h < bounds[2] and len(t[2]) < pnum[2]:
-        p = 2
-    elif h < bounds[3] and len(t[3]) < pnum[3]:
-        p = 3
-    else:
-        p = 4
-    t[p] += (int(r), int(g), int(b)),
+    print()
+    print(len(remaining_pixels))
+    img = Image.new('RGB', dim)
+    draw = ImageDraw.Draw(img)
 
-for i in range(5):
-    t[i].sort(key=lambda c: c[0]*2126 + c[1]*7152 + c[2]*722, reverse=True)
+    for x in range(DIM_X):
+        for y in range(DIM_Y):
+            draw.point((x, y), image_array[x][y])
 
-r = [0, 0, 0, 0, 0]
-for p in range(5):
-    for c, d, x, y in a[p]:
-        print(f'c, d, x, y, p: {c}, {d}, {x}, {y}, {p}')
-        print(f'r: {r}')
-        # print(f't: {t}')
-        print(f'r[p]: {r[p]}')
-        print(f't[p]: {t[p]}')
-        print(f't[p][r[p]]: {t[p][r[p]]}')
-        draw.point((x, y), t[p][r[p]])
-        r[p] += 1
-        print()
+    img.show()
+    img.save("out.png")
 
-img.save("out.png")
+
+main()
