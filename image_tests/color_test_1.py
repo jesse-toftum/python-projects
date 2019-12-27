@@ -1,7 +1,13 @@
 import colorsys
 import random
 
+
 import numpy as np
+
+from colormath.color_objects import sRGBColor, LabColor
+from colormath.color_conversions import convert_color
+from colormath.color_diff import delta_e_cie2000
+
 from PIL import Image, ImageDraw
 from cmath import phase
 from tqdm import tqdm
@@ -10,6 +16,17 @@ import sys
 DIM_X = DIM_Y = 64
 
 SEEDS = 1
+
+
+def color_distance(color_1, color_2):
+    color_1_rgb = sRGBColor(
+        color_1[0] / 255, color_1[1] / 255, color_1[2] / 255)
+    color_2_rgb = sRGBColor(
+        color_2[0] / 255, color_2[1] / 255, color_2[2] / 255)
+    color1_lab = convert_color(color_1_rgb, LabColor)
+    color2_lab = convert_color(color_2_rgb, LabColor)
+    return delta_e_cie2000(color1_lab, color2_lab)
+
 
 
 def border_has_pixel(x, y, image_array, radius=1.5, p=2):
@@ -52,7 +69,6 @@ def main():
         for y in range(DIM_Y):
             image_array[x].append(False)
             remaining_pixels.append((x, y))
-
 
     random.shuffle(color_list)
     random.shuffle(remaining_pixels)
