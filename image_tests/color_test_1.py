@@ -2,9 +2,12 @@ import colorsys
 import math
 import random
 import time
+import threading
 
 
 import numpy as np
+from numba import jit, jitclass, njit, generated_jit
+from numba.typed import List
 
 from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_conversions import convert_color
@@ -15,12 +18,6 @@ from cmath import phase
 from tqdm import tqdm
 import sys
 
-DIM_X = DIM_Y = 256
-
-
-SEEDS = 1
-start = time.time()
-
 
 def normal_round(n):
     if n - math.floor(n) < 0.5:
@@ -28,6 +25,7 @@ def normal_round(n):
     return math.ceil(n)
 
 
+@njit
 def color_distance(color_1, color_2):
     dr = (color_1[0] - color_2[0]) ** 2
     dg = (color_1[1] - color_2[1]) ** 2
@@ -42,10 +40,12 @@ def color_distance(color_1, color_2):
     # color2_lab = convert_color(color_2_rgb, LabColor)
     # return delta_e_cie2000(color1_lab, color2_lab)
 
-def get_closest_color(color, list_of_colors):
-    champion_distance = float('inf')
+
+@njit
+def get_closest_color(color, color_list):
+    champion_distance = 999_999_999_999
     champion_color = (0, 0, 0)
-    for i in list_of_colors:
+    for i in color_list:
         current_distance = color_distance(color, i)
         if current_distance < champion_distance:
             champion_distance = current_distance
@@ -53,108 +53,191 @@ def get_closest_color(color, list_of_colors):
     return champion_color
 
 
-def border_has_pixel(x, y, image_array, radius=1.5, p=2):
-    found_pixels = []
-    lower_x = max(0, normal_round(x-radius))
-    upper_x = min(DIM_X - 1, normal_round(x+radius))+1
-    lower_y = max(0, normal_round(y-radius))
-    upper_y = min(DIM_Y - 1, normal_round(y+radius))+1
-    for i in range(lower_x, upper_x):
-        for j in range(lower_y, upper_y):
-            if not image_array[i][j]:
-                continue
-            x_dist = abs(i-x)
-            y_dist = abs(j-y)
-            reg_dist = (x_dist ** p + y_dist ** p) ** (1/p)
-            if reg_dist <= radius:
-                found_pixels.append((i, j))
-    if found_pixels:
-        return random.choice(found_pixels)
-    return False
+class ImageGeneration:
+    def __init__(self, dim_x, dim_y, seeds, radius=1.5, p=2):
+        self.seeds = seeds
+        self.dim_x = dim_x
+        self.dim_y = dim_y
+        self.p = p
+        self.radius = radius
+
+        self.img = Image.new('RGB', (dim_x, dim_y))
+        self.draw = ImageDraw.Draw(self.img)
+
+        self.color_list = self.populate_colors(unique_colors=dim_x*dim_y)
+        random.shuffle(self.color_list)
+
+        if dim_x * dim_y < 255 ** 3:
+            self.color_list = set(self.color_list)
+
+        # self.color_list = List()
+        temp = List()
+        for i in self.color_list:
+            temp.append(i)
+        self.color_list = temp
+        del temp
+
+        self.image_array = []
+        self.remaining_pixels = set()
+
+        for x in range(dim_x):
+            self.image_array.append([])
+            for y in range(dim_y):
+                self.image_array[x].append((-1, -1, -1))
+                # remaining_pixels.append((x, y))
+
+        for _ in range(seeds):
+            color = self.color_list.pop()
+            rand_x = random.randint(0, dim_x - 1)
+            rand_y = random.randint(0, dim_y - 1)
+            self.add_pixel(rand_x, rand_y, color)
+
+    def add_pixel(self, x, y, color):
+        self.image_array[x][y] = color
+        lower_x = max(0, normal_round(x - self.radius))
+        upper_x = min(self.dim_x - 1, normal_round(x + self.radius)) + 1
+        lower_y = max(0, normal_round(y - self.radius))
+        upper_y = min(self.dim_y - 1, normal_round(y + self.radius)) + 1
+
+        for i in range(lower_x, upper_x):
+            for j in range(lower_y, upper_y):
+                if (i, j) in self.remaining_pixels \
+                    or self.image_array[i][j][0] != -1:
+                    continue
+                x_dist = abs(i-x)
+                y_dist = abs(j-y)
+                reg_dist = (x_dist ** self.p + y_dist ** self.p) ** (1/self.p)
+                if reg_dist <= self.radius:
+                    self.remaining_pixels.add((i, j))
+
+    def get_neighbor(self, x, y):
+        neighbor_list = []
+        lower_x = max(0, normal_round(x - self.radius))
+        upper_x = min(self.dim_x - 1, normal_round(x + self.radius)) + 1
+        lower_y = max(0, normal_round(y - self.radius))
+        upper_y = min(self.dim_y - 1, normal_round(y + self.radius)) + 1
+
+        for i in range(lower_x, upper_x):
+            for j in range(lower_y, upper_y):
+                if self.image_array[i][j][0] == -1:
+                    continue
+                x_dist = abs(i-x)
+                y_dist = abs(j-y)
+                reg_dist = (x_dist ** self.p + y_dist ** self.p) ** (1/self.p)
+                if reg_dist <= self.radius:
+                    neighbor_list.append((i, j))
+        return random.choice(neighbor_list)
+
+    # def methoddddd(self,
+    #                lower_x: int,
+    #                upper_x: int,
+    #                lower_y: int,
+    #                upper_y: int,
+    #                x: int, y: int):
+    #     neighbor_list = np.array([(-1, -1)])
+    #     # !
+    #     # !
+    #     # !
+    #     # ! Vectorize this
+    #     # !
+    #     # !
+    #     # !
+    #     for i in range(lower_x, upper_x):
+    #         for j in range(lower_y, upper_y):
+    #             if self.image_array[i][j][0] == -1:
+    #                 continue
+    #             x_dist = np.abs(i-x)
+    #             y_dist = np.abs(j-y)
+
+    #             reg_dist = (x_dist ** self.p + y_dist ** self.p) ** (1/self.p)
+    #             # if reg_dist <= self.radius:
+    #             #     return (i, j)
+    #             if reg_dist <= self.radius:
+    #                 # print(i, j)
+    #                 neighbor_list = np.append(neighbor_list, (i, j))
+    #     # !
+    #     # !
+    #     # !
+    #     # ! Vectorize this
+    #     # !
+    #     # !
+    #     # !
+    #     # for i in range(5):
+    #     #     print()
+    #     # print(neighbor_list)
+    #     # for i in range(5):
+    #     #     print()
+    #     neighbor_list = np.delete(neighbor_list, (-1, -1))
+    #     print(neighbor_list)
+    #     choice = random.choice(neighbor_list)
+    #     return choice
+
+    @classmethod
+    def populate_colors(cls, max_pixel=255, unique_colors=256**2):
+        """Returns evenly spaced colors"""
+        all_colors = []
+        max_value = max_pixel ** 3
+        dim_1_colors = np.linspace(0, max_value, num=unique_colors)
+        for i in dim_1_colors:
+            red = int(i % max_pixel)
+            green = int((i // max_pixel) % max_pixel)
+            blue = int(i // (max_pixel ** 2))
+            all_colors.append((red, green, blue))
+        return all_colors
+
+    def fit_colors(self):
+        last_value = self.dim_x * self.dim_y - 1 - self.seeds
+
+        for _ in range(last_value):
+            chosen = random.choice(tuple(self.remaining_pixels))
+            x, y = chosen
+            # print(len(remaining_pixels))
+
+            neighbor = self.get_neighbor(*chosen)
+            n_x, n_y = neighbor
+            color = get_closest_color(
+                self.image_array[n_x][n_y], self.color_list)
+            self.add_pixel(x, y, color)
+
+            self.remaining_pixels.remove(chosen)
+            self.color_list.remove(color)
+
+            # if i % 1000 == 0:
+            #     for x in range(DIM_X):
+            #         for y in range(DIM_Y):
+            #             draw.point((x, y), image_array[x][y])
+            #     img.show()
+        for x in range(self.dim_x):
+            for y in range(self.dim_y):
+                self.draw.point((x, y), self.image_array[x][y])
+
+    def show(self, *args, **kwargs):
+        self.img.show(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        self.img.save(*args, **kwargs)
 
 
-def populate_colors(dim_x, dim_y, max_pixel=255, unique_colors=256**2):
-    """Returns evenly spaced colors"""
-    all_colors = []
-    max_value = max_pixel ** 3
-    dim_1_colors = np.linspace(0, max_value, num=unique_colors)
-    for i in dim_1_colors:
-        red = int(i % max_pixel)
-        green = int((i // max_pixel) % max_pixel)
-        blue = int(i // (max_pixel ** 2))
-        all_colors.append((red, green, blue))
-    return all_colors
+def start(postfix):
+    print(f'enter start {postfix}')
+    dim_x = dim_y = 1600
+    seeds = 1
+    start = time.time()
+    image_generator = ImageGeneration(dim_x, dim_y, seeds)
+    image_generator.fit_colors()
+    end = time.time()
+    print(f'Thread {postfix} took {end-start}')
+    image_generator.save(f"out_{postfix}.png")
+    print(f'exit start {postfix}')
+    # image_generator.show()
 
 
-def main():
-    color_list = populate_colors(DIM_X, DIM_Y, unique_colors=DIM_X*DIM_Y)
-    print(len(color_list))
-    print(DIM_X * DIM_Y)
-    dim = (DIM_X, DIM_Y)
+for i in range(6):
+    thread = threading.Thread(target=start, args=(i,))
+    thread.start()
 
-    image_array = []
-    remaining_pixels = []
-    for x in range(DIM_X):
-        image_array.append([])
-        for y in range(DIM_Y):
-            image_array[x].append(False)
-            remaining_pixels.append((x, y))
-
-    random.shuffle(color_list)
-    random.shuffle(remaining_pixels)
-
-    for _ in range(SEEDS):
-        color = color_list.pop()
-        pixel = remaining_pixels.pop()
-        image_array[pixel[0]][pixel[1]] = color
-
-    last_value = DIM_X * DIM_Y + 1
-
-    img = Image.new('RGB', dim)
-    draw = ImageDraw.Draw(img)
-
-
-    repeat_count = 0
-    for i in tqdm(range(last_value)):
-        random.shuffle(remaining_pixels)
-        # print(len(remaining_pixels))
-
-        to_remove = False
-        color_to_remove = False
-        for idx, (x, y) in enumerate(remaining_pixels):
-            # print(idx, x, y)
-            # Nearest neighbor
-            nn = border_has_pixel(x, y, image_array=image_array)
-            if nn:
-                color = get_closest_color(image_array[nn[0]][nn[1]],
-                                          list_of_colors=color_list)
-                color_to_remove = color
-                # print(idx, x, y, color)
-                image_array[x][y] = color
-                to_remove = (x, y)
-                break
-
-        if to_remove:
-            remaining_pixels.remove(to_remove)
-        if color_to_remove:
-            color_list.remove(color_to_remove)
-        if last_value == len(remaining_pixels):
-            repeat_count += 1
-            # print(f'repeat {repeat_count}')
-            print(f'Pixels left: {len(remaining_pixels)}')
-            print(f'Colors left: {len(color_list)}\n')
-        last_value = len(remaining_pixels)
-        if i % 1000 == 0:
-            for x in range(DIM_X):
-                for y in range(DIM_Y):
-                    draw.point((x, y), image_array[x][y])
-            img.show()
-
-    img.show()
-    img.save("out.png")
-
-
-main()
-
-end = time.time()
-print(end-start)
+# Speedup options:
+# //Write in another language
+# *Optimize for interpreter
+# *JIT Compilation
+# ?Parallelization
