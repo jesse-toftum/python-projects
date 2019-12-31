@@ -54,6 +54,17 @@ def get_closest_color(color, color_list):
     return champion_color
 
 
+@njit
+def is_perfect_square(x):
+
+    # Find floating point value of
+    # square root of x.
+    sr = np.sqrt(x)
+
+    # If square root is an integer
+    return (sr - np.floor(sr)) == 0
+
+
 class ImageGeneration:
     def __init__(self, dim_x, dim_y, seeds, radius=1.5, p=2, min_value_color=0):
         self.seeds = seeds
@@ -192,7 +203,7 @@ class ImageGeneration:
     def fit_colors(self):
         last_value = self.dim_x * self.dim_y - 1 - self.seeds
 
-        for _ in tqdm(range(last_value)):
+        for i in tqdm(range(last_value)):
             chosen = random.choice(tuple(self.remaining_pixels))
             x, y = chosen
             # print(len(remaining_pixels))
@@ -206,11 +217,11 @@ class ImageGeneration:
             self.remaining_pixels.remove(chosen)
             self.color_list.remove(color)
 
-            # if i % 1000 == 0:
-            #     for x in range(DIM_X):
-            #         for y in range(DIM_Y):
-            #             draw.point((x, y), image_array[x][y])
-            #     img.show()
+            if is_perfect_square(i):
+                for x in range(self.dim_x):
+                    for y in range(self.dim_y):
+                        self.draw.point((x, y), self.image_array[x][y])
+                self.save(f"image_tests/images/growth/{i}.png")
         for x in range(self.dim_x):
             for y in range(self.dim_y):
                 self.draw.point((x, y), self.image_array[x][y])
@@ -222,34 +233,31 @@ class ImageGeneration:
         self.img.save(*args, **kwargs)
 
 
-def start():
+def grow():
     # print(f'enter start {postfix}')
     image_generator = ImageGeneration(5, 5, 5)
     image_generator.fit_colors()
     r = 3.0
-    p = 3.0
-    for i in range(100):
-        min_value_color = i * 255 * 255
-        dim_x = dim_y = 128
-        seeds = 1
-        start = time.time()
-        image_generator = ImageGeneration(dim_x, dim_y,
-                                          seeds, radius=r, p=p,
-                                          min_value_color=min_value_color)
-        image_generator.fit_colors()
-        end = time.time()
-        # print(dim_x * dim_y)
-        print(f'{end-start}\n')
-        image_generator.save(
-            f"image_tests/images/out_min_power_{i}.png")
-        # print(f'exit start {postfix}')
-        # image_generator.show()
+    p = 1.0
+    dim_x = dim_y = 512
+    seeds = 1
+    start = time.time()
+    image_generator = ImageGeneration(dim_x, dim_y,
+                                      seeds, radius=r, p=p)
+    image_generator.fit_colors()
+    end = time.time()
+    # print(dim_x * dim_y)
+    print(f'{end-start}\n')
+    # image_generator.save(
+    #     f"image_tests/images/out_min_power_{i}.png")
+    # print(f'exit start {postfix}')
+    image_generator.show()
 
 
 # for i in range(6, 8):
 #     thread = threading.Thread(target=start, args=(i,))
 #     thread.start()
-start()
+grow()
 
 # Speedup options:
 # //Write in another language
