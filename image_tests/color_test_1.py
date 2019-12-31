@@ -19,10 +19,11 @@ from tqdm import tqdm
 import sys
 
 
+@jit
 def normal_round(n):
-    if n - math.floor(n) < 0.5:
-        return math.floor(n)
-    return math.ceil(n)
+    if n - np.floor(n) < 0.5:
+        return int(np.floor(n))
+    return int(np.ceil(n))
 
 
 @njit
@@ -54,17 +55,18 @@ def get_closest_color(color, color_list):
 
 
 class ImageGeneration:
-    def __init__(self, dim_x, dim_y, seeds, radius=1.5, p=2):
+    def __init__(self, dim_x, dim_y, seeds, radius=1.5, p=2, min_value_color=0):
         self.seeds = seeds
         self.dim_x = dim_x
         self.dim_y = dim_y
-        self.p = p
-        self.radius = radius
+        self.p = float(p)
+        self.radius = float(radius)
 
         self.img = Image.new('RGB', (dim_x, dim_y))
         self.draw = ImageDraw.Draw(self.img)
 
-        self.color_list = self.populate_colors(unique_colors=dim_x*dim_y)
+        self.color_list = self.populate_colors(unique_colors=dim_x*dim_y,
+                                               min_value=min_value_color)
         random.shuffle(self.color_list)
 
         if dim_x * dim_y < 255 ** 3:
@@ -102,11 +104,13 @@ class ImageGeneration:
         for i in range(lower_x, upper_x):
             for j in range(lower_y, upper_y):
                 if (i, j) in self.remaining_pixels \
-                    or self.image_array[i][j][0] != -1:
+                        or self.image_array[i][j][0] != -1:
                     continue
-                x_dist = abs(i-x)
-                y_dist = abs(j-y)
-                reg_dist = (x_dist ** self.p + y_dist ** self.p) ** (1/self.p)
+                x_dist = np.abs(i-x)
+                y_dist = np.abs(j-y)
+                reg_dist = np.power(
+                    (np.power(x_dist, self.p)
+                     + np.power(y_dist, self.p)), (1/self.p))
                 if reg_dist <= self.radius:
                     self.remaining_pixels.add((i, j))
 
@@ -173,7 +177,7 @@ class ImageGeneration:
     #     return choice
 
     @classmethod
-    def populate_colors(cls, max_pixel=255, unique_colors=256**2):
+    def populate_colors(cls, max_pixel=255, unique_colors=256**2, min_value=0):
         """Returns evenly spaced colors"""
         all_colors = []
         max_value = max_pixel ** 3
@@ -188,7 +192,7 @@ class ImageGeneration:
     def fit_colors(self):
         last_value = self.dim_x * self.dim_y - 1 - self.seeds
 
-        for _ in range(last_value):
+        for _ in tqdm(range(last_value)):
             chosen = random.choice(tuple(self.remaining_pixels))
             x, y = chosen
             # print(len(remaining_pixels))
@@ -218,23 +222,34 @@ class ImageGeneration:
         self.img.save(*args, **kwargs)
 
 
-def start(postfix):
-    print(f'enter start {postfix}')
-    dim_x = dim_y = 1600
-    seeds = 1
-    start = time.time()
-    image_generator = ImageGeneration(dim_x, dim_y, seeds)
+def start():
+    # print(f'enter start {postfix}')
+    image_generator = ImageGeneration(5, 5, 5)
     image_generator.fit_colors()
-    end = time.time()
-    print(f'Thread {postfix} took {end-start}')
-    image_generator.save(f"out_{postfix}.png")
-    print(f'exit start {postfix}')
-    # image_generator.show()
+    r = 3.0
+    p = 3.0
+    for i in range(100):
+        min_value_color = i * 255 * 255
+        dim_x = dim_y = 128
+        seeds = 1
+        start = time.time()
+        image_generator = ImageGeneration(dim_x, dim_y,
+                                          seeds, radius=r, p=p,
+                                          min_value_color=min_value_color)
+        image_generator.fit_colors()
+        end = time.time()
+        # print(dim_x * dim_y)
+        print(f'{end-start}\n')
+        image_generator.save(
+            f"image_tests/images/out_min_power_{i}.png")
+        # print(f'exit start {postfix}')
+        # image_generator.show()
 
 
-for i in range(6):
-    thread = threading.Thread(target=start, args=(i,))
-    thread.start()
+# for i in range(6, 8):
+#     thread = threading.Thread(target=start, args=(i,))
+#     thread.start()
+start()
 
 # Speedup options:
 # //Write in another language
