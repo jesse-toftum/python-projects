@@ -181,7 +181,7 @@ class ImageGeneration:
         """Returns evenly spaced colors"""
         all_colors = []
         max_value = max_pixel ** 3
-        dim_1_colors = np.linspace(0, max_value, num=unique_colors)
+        dim_1_colors = np.linspace(min_value, max_value, num=unique_colors)
         for i in dim_1_colors:
             red = int(i % max_pixel)
             green = int((i // max_pixel) % max_pixel)
@@ -226,9 +226,9 @@ def start():
     # print(f'enter start {postfix}')
     image_generator = ImageGeneration(5, 5, 5)
     image_generator.fit_colors()
-    r = 3.0
+    r = 2.0
     p = 3.0
-    for i in range(100):
+    for i in range(255):
         min_value_color = i * 255 * 255
         dim_x = dim_y = 128
         seeds = 1
@@ -241,7 +241,7 @@ def start():
         # print(dim_x * dim_y)
         print(f'{end-start}\n')
         image_generator.save(
-            f"image_tests/images/out_min_power_{i}.png")
+            f"image_tests/images/power/out_min_power_{i}.png")
         # print(f'exit start {postfix}')
         # image_generator.show()
 
