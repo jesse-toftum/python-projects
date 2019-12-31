@@ -54,24 +54,28 @@ def get_closest_color(color, color_list):
     return champion_color
 
 
-@njit
-def is_perfect_square(x):
+# @njit
+# def is_perfect_square(x):
 
-    # Find floating point value of
-    # square root of x.
-    sr = np.sqrt(x)
+#     # Find floating point value of
+#     # square root of x.
+#     sr = np.sqrt(x)
 
-    # If square root is an integer
-    return (sr - np.floor(sr)) == 0
+#     # If square root is an integer
+#     return (sr - np.floor(sr)) == 0
 
 
 class ImageGeneration:
-    def __init__(self, dim_x, dim_y, seeds, radius=1.5, p=2, min_value_color=0):
+    def __init__(self, dim_x, dim_y, seeds, radius=1.5, p=2, min_value_color=0,
+                 random_seed=None, progress_bar=True):
+        if random_seed is not None:
+            random.seed(random_seed)
         self.seeds = seeds
         self.dim_x = dim_x
         self.dim_y = dim_y
         self.p = float(p)
         self.radius = float(radius)
+        self.progress_bar = progress_bar
 
         self.img = Image.new('RGB', (dim_x, dim_y))
         self.draw = ImageDraw.Draw(self.img)
@@ -203,28 +207,41 @@ class ImageGeneration:
     def fit_colors(self):
         last_value = self.dim_x * self.dim_y - 1 - self.seeds
 
-        for i in tqdm(range(last_value)):
-            chosen = random.choice(tuple(self.remaining_pixels))
-            x, y = chosen
-            # print(len(remaining_pixels))
+        if self.progress_bar:
+            for i in tqdm(range(last_value)):
+                self.propagate()
+        else:
+            for i in range(last_value):
+                self.propagate()
 
-            neighbor = self.get_neighbor(*chosen)
-            n_x, n_y = neighbor
-            color = get_closest_color(
-                self.image_array[n_x][n_y], self.color_list)
-            self.add_pixel(x, y, color)
-
-            self.remaining_pixels.remove(chosen)
-            self.color_list.remove(color)
-
-            if is_perfect_square(i):
-                for x in range(self.dim_x):
-                    for y in range(self.dim_y):
-                        self.draw.point((x, y), self.image_array[x][y])
-                self.save(f"image_tests/images/growth/{i}.png")
+            # if is_perfect_square(i):
+            #     for x in range(self.dim_x):
+            #         for y in range(self.dim_y):
+            #             self.draw.point((x, y), self.image_array[x][y])
+            #     self.save(f"image_tests/images/growth/{i}.png")
         for x in range(self.dim_x):
             for y in range(self.dim_y):
                 self.draw.point((x, y), self.image_array[x][y])
+
+    def propagate(self):
+        chosen = random.choice(tuple(self.remaining_pixels))
+        x, y = chosen
+        # print(len(remaining_pixels))
+
+        neighbor = self.get_neighbor(*chosen)
+        n_x, n_y = neighbor
+        color = get_closest_color(
+            self.image_array[n_x][n_y], self.color_list)
+        self.add_pixel(x, y, color)
+
+        self.remaining_pixels.remove(chosen)
+        self.color_list.remove(color)
+
+        # if is_perfect_square(i):
+        #     for x in range(self.dim_x):
+        #         for y in range(self.dim_y):
+        #             self.draw.point((x, y), self.image_array[x][y])
+        #     self.save(f"image_tests/images/growth/{i}.png")
 
     def show(self, *args, **kwargs):
         self.img.show(*args, **kwargs)
@@ -233,30 +250,39 @@ class ImageGeneration:
         self.img.save(*args, **kwargs)
 
 
-def grow():
+def grow(optional=None, progress_bar=True):
     # print(f'enter start {postfix}')
-    image_generator = ImageGeneration(5, 5, 5)
-    image_generator.fit_colors()
     r = 3.0
     p = 1.0
     dim_x = dim_y = 512
     seeds = 1
     start = time.time()
     image_generator = ImageGeneration(dim_x, dim_y,
-                                      seeds, radius=r, p=p)
+                                      seeds, radius=r, p=p,
+                                      random_seed=optional,
+                                      progress_bar=progress_bar)
     image_generator.fit_colors()
     end = time.time()
     # print(dim_x * dim_y)
-    print(f'{end-start}\n')
-    # image_generator.save(
+    # print(f'{end-start}\n')
+    image_generator.save(f"image_tests/images/seeded/{dim_x}x{dim_y}_{optional}.png")
     #     f"image_tests/images/out_min_power_{i}.png")
     # print(f'exit start {postfix}')
-    image_generator.show()
-    
-# for i in range(6, 8):
-#     thread = threading.Thread(target=start, args=(i,))
+    # image_generator.show()
+
+
+# image_generator = ImageGeneration(5, 5, 5, progress_bar=False)
+# image_generator.fit_colors()
+# num_threads = 2
+# for i in range(num_threads):
+#     progress_bar = (i == num_threads - 1)
+#     seed_to_use = random.randint(0, 1_000_000_000)
+#     thread = threading.Thread(target=grow, args=(seed_to_use, progress_bar))
 #     thread.start()
-grow()
+
+for i in range(50):
+    seed_to_use = random.randint(0, 1_000_000_000)
+    grow(optional=seed_to_use)
 
 # Speedup options:
 # //Write in another language
