@@ -237,7 +237,6 @@ def grow():
     # print(f'enter start {postfix}')
     image_generator = ImageGeneration(5, 5, 5)
     image_generator.fit_colors()
-<<<<<<< HEAD
     r = 3.0
     p = 1.0
     dim_x = dim_y = 512
@@ -253,28 +252,7 @@ def grow():
     #     f"image_tests/images/out_min_power_{i}.png")
     # print(f'exit start {postfix}')
     image_generator.show()
-=======
-    r = 2.0
-    p = 3.0
-    for i in range(255):
-        min_value_color = i * 255 * 255
-        dim_x = dim_y = 128
-        seeds = 1
-        start = time.time()
-        image_generator = ImageGeneration(dim_x, dim_y,
-                                          seeds, radius=r, p=p,
-                                          min_value_color=min_value_color)
-        image_generator.fit_colors()
-        end = time.time()
-        # print(dim_x * dim_y)
-        print(f'{end-start}\n')
-        image_generator.save(
-            f"image_tests/images/power/out_min_power_{i}.png")
-        # print(f'exit start {postfix}')
-        # image_generator.show()
->>>>>>> ba77e40fbb023d8c670cfd87463997539bfda38f
-
-
+    
 # for i in range(6, 8):
 #     thread = threading.Thread(target=start, args=(i,))
 #     thread.start()
