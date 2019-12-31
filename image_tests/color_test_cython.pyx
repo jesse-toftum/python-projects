@@ -6,8 +6,8 @@ import threading
 
 
 import numpy as np
-from numba import jit, jitclass, njit, generated_jit
-from numba.typed import List
+import cython
+
 
 from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_conversions import convert_color
@@ -19,14 +19,12 @@ from tqdm import tqdm
 import sys
 
 
-@jit
 def normal_round(n):
     if n - np.floor(n) < 0.5:
         return int(np.floor(n))
     return int(np.ceil(n))
 
 
-@njit
 def color_distance(color_1, color_2):
     dr = (color_1[0] - color_2[0]) ** 2
     dg = (color_1[1] - color_2[1]) ** 2
@@ -42,7 +40,6 @@ def color_distance(color_1, color_2):
     # return delta_e_cie2000(color1_lab, color2_lab)
 
 
-@njit
 def get_closest_color(color, color_list):
     champion_distance = 999_999_999_999
     champion_color = (0, 0, 0)
@@ -54,7 +51,6 @@ def get_closest_color(color, color_list):
     return champion_color
 
 
-# @njit
 # def is_perfect_square(x):
 
 #     # Find floating point value of
