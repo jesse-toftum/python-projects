@@ -6,8 +6,7 @@ import threading
 
 
 import numpy as np
-from numba import jit, jitclass, njit, generated_jit
-from numba.typed import List
+
 
 from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_conversions import convert_color
@@ -19,14 +18,12 @@ from tqdm import tqdm
 import sys
 
 
-@jit
 def normal_round(n):
     if n - np.floor(n) < 0.5:
         return int(np.floor(n))
     return int(np.ceil(n))
 
 
-@njit
 def color_distance(color_1, color_2):
     dr = (color_1[0] - color_2[0]) ** 2
     dg = (color_1[1] - color_2[1]) ** 2
@@ -42,7 +39,6 @@ def color_distance(color_1, color_2):
     # return delta_e_cie2000(color1_lab, color2_lab)
 
 
-@njit
 def get_closest_color(color, color_list):
     champion_distance = 999_999_999_999
     champion_color = (0, 0, 0)
@@ -54,15 +50,14 @@ def get_closest_color(color, color_list):
     return champion_color
 
 
-@njit
-def is_perfect_square(x):
+# def is_perfect_square(x):
 
-    # Find floating point value of
-    # square root of x.
-    sr = np.sqrt(x)
+#     # Find floating point value of
+#     # square root of x.
+#     sr = np.sqrt(x)
 
-    # If square root is an integer
-    return (sr - np.floor(sr)) == 0
+#     # If square root is an integer
+#     return (sr - np.floor(sr)) == 0
 
 
 class ImageGeneration:
@@ -70,7 +65,6 @@ class ImageGeneration:
                  random_seed=None, progress_bar=True):
         if random_seed is not None:
             random.seed(random_seed)
-        self.random_seed = random_seed
         self.seeds = seeds
         self.dim_x = dim_x
         self.dim_y = dim_y
@@ -87,13 +81,6 @@ class ImageGeneration:
 
         if dim_x * dim_y < 255 ** 3:
             self.color_list = set(self.color_list)
-
-        # self.color_list = List()
-        temp = List()
-        for i in self.color_list:
-            temp.append(i)
-        self.color_list = temp
-        del temp
 
         self.image_array = []
         self.remaining_pixels = set()
@@ -210,16 +197,21 @@ class ImageGeneration:
 
         if self.progress_bar:
             for i in tqdm(range(last_value)):
-                self.propagate(i)
+                self.propagate()
         else:
             for i in range(last_value):
-                self.propagate(i)
+                self.propagate()
 
+            # if is_perfect_square(i):
+            #     for x in range(self.dim_x):
+            #         for y in range(self.dim_y):
+            #             self.draw.point((x, y), self.image_array[x][y])
+            #     self.save(f"image_tests/images/growth/{i}.png")
         for x in range(self.dim_x):
             for y in range(self.dim_y):
                 self.draw.point((x, y), self.image_array[x][y])
 
-    def propagate(self, iteration):
+    def propagate(self):
         chosen = random.choice(tuple(self.remaining_pixels))
         x, y = chosen
         # print(len(remaining_pixels))
@@ -233,12 +225,11 @@ class ImageGeneration:
         self.remaining_pixels.remove(chosen)
         self.color_list.remove(color)
 
-        if is_perfect_square(iteration):
-            for x in range(self.dim_x):
-                for y in range(self.dim_y):
-                    self.draw.point((x, y), self.image_array[x][y])
-            self.save(
-                f"image_tests/images/grow/1/{self.dim_x}x{self.dim_y}_{self.random_seed}_radius_{self.radius:.1f}_power_{self.p:.1f}_{np.sqrt(iteration)}.png")
+        # if is_perfect_square(i):
+        #     for x in range(self.dim_x):
+        #         for y in range(self.dim_y):
+        #             self.draw.point((x, y), self.image_array[x][y])
+        #     self.save(f"image_tests/images/growth/{i}.png")
 
     def show(self, *args, **kwargs):
         self.img.show(*args, **kwargs)
@@ -253,8 +244,7 @@ def grow(optional=None, progress_bar=True):
     # p = random.uniform(0.5, 5.0)
     r = 1.0
     p = 1.0
-    dim_x = 1920
-    dim_y = 1080
+    dim_x = dim_y = 128
     seeds = 1
     start = time.time()
     image_generator = ImageGeneration(dim_x, dim_y,
@@ -265,8 +255,7 @@ def grow(optional=None, progress_bar=True):
     end = time.time()
     # print(dim_x * dim_y)
     print(f'{end-start}\n')
-    image_generator.save(
-        f"image_tests/images/grow/1/{dim_x}x{dim_y}_{optional}_radius_{r:.1f}_power_{p:.1f}_final.png")
+    image_generator.save(f"image_tests/temp/{dim_x}x{dim_y}_{optional}_radius_{r:.5f}_power_{p:.5f}.png")
     #     f"image_tests/images/out_min_power_{i}.png")
     # print(f'exit start {postfix}')
     # image_generator.show()
