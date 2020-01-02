@@ -1,15 +1,17 @@
+#cython: language_level=3
 import random
 import time
 
 import numpy as np
 from numba.typed import List
+# from libcpp cimport bool
 from PIL import Image, ImageDraw
 from tqdm import tqdm
 
 from numba_funcs import get_closest_color, is_perfect_square, normal_round
 
-
-class ImageGeneration:
+# TODO: Break this code back down from class, then Cythonize it from there
+cdef class ImageGeneration:
     def __init__(self,
                  dim_x, dim_y,
                  seeds,

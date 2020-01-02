@@ -1,3 +1,5 @@
+#cython: language_level=3
+
 import pyximport; pyximport.install()
 
 from color_test import ImageGeneration
